@@ -1,26 +1,39 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const mongoose = require('mongoose');
+
 const deliveryRoutes = require('./routes/deliveryRoutes');
+const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 dotenv.config();
 
 const app = express();
 
-/**
- * Middleware
- */
 app.use(express.json());
 
-/**
- * Health check / base route
- */
 app.get('/', (req, res) => {
+  res.json({
+    message: 'Delivery Tracking API is running 🚚'
+  });
+});
+
+app.get('/health', (req, res) => {
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+
   res.status(200).json({
-    message: 'Delivery Tracking API is running 🚚',
-    status: 'OK'
+    status: 'ok',
+    db: dbStates[mongoose.connection.readyState] || 'disconnected'
   });
 });
 
 app.use('/api/deliveries', deliveryRoutes);
+
+app.use(notFound);
+app.use(errorHandler);
 
 module.exports = app;
